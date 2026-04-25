@@ -297,6 +297,8 @@ Dies führt nun zu zwei sehr ausführlichen Konfusionsmatrizen wo auch direkt ei
 
  ##  Teil 4 - Flächenkorrigierte Konfusionsmatrix
 
+Wie in der Vorlesung gehört, ist neben einer ...
+
 	###########################################################################
 	## Flächen-adjustierte Konfusionsmatrix
 	###########################################################################
