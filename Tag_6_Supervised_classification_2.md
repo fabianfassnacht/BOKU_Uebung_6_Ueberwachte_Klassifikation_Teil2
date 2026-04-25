@@ -297,8 +297,87 @@ Dies führt nun zu zwei sehr ausführlichen Konfusionsmatrizen wo auch direkt ei
 
  ##  Teil 4 - Flächenkorrigierte Konfusionsmatrix
 
+	###########################################################################
+	## Flächen-adjustierte Konfusionsmatrix
+	###########################################################################
+	
+	## Code bereitgestellt von RESEDA @FU Berlin und leicht angepasst,
+	## um mit terra zu funktionieren:
+	## https://blogs.fu-berlin.de/reseda/area-adjusted-accuracies/
+	
+	# flächenadjustierte Genauigkeitsbewertung
+	# berechnet wie in Olofsson et al. 2014
+	
+	# erstelle reguläre Genauigkeitsmatrix
+	confmat <- table(as.factor(val$class), as.factor(val_ex_single$class))
+	# Anzahl der Pixel pro Klasse aus der Klassifikationskarte ermitteln und in km² umrechnen
+	
+	# der Befehl "values" extrahiert alle Pixelwerte aus der Klassifikationskarte
+	# diese sind einfach Werte von 1–7 (für die sieben Landnutzungsklassen)
+	imgVal <- as.factor(values(svmPred_single))
+	# dieser Befehl bestimmt die Anzahl der in der Karte enthaltenen Landnutzungsklassen
+	# in unserem Fall 7
+	nclass <- length(unique(val$class))
+	# "sapply" funktioniert ähnlich wie eine for-Schleife. Das bedeutet, eine Funktion
+	# (der Teil, der in einer for-Schleife in geschweiften Klammern stehen würde)
+	# wird wiederholt angewendet. In diesem Fall zählt die Funktion "sum(imgVal == x)",
+	# wie viele Pixel genau den Wert "x" haben. Dabei nimmt "x" Werte von 1 bis nclass an,
+	# mit nclass = 7 in unserem Fall. Die Variable "maparea" enthält am Ende die Anzahl
+	# der Pixel jeder Landbedeckungsklasse in unserer Klassifikationskarte
+	maparea <- sapply(1:nclass, function(x) sum(imgVal == x))
+	# im nächsten Schritt berechnen wir die Fläche, die diesen Pixeln entspricht
+	# dazu multiplizieren wir zunächst die Anzahl der Pixel mit der Fläche eines Pixels
+	# in unserem Fall ist jedes Pixel 10 m x 10 m = 100 m²
+	# anstatt "res(svmPred_single)[1] * res(svmPred_single)[2]" zu schreiben, was
+	# die räumliche Auflösung eines Pixels aus den Metadaten des Rasterbildes bestimmt,
+	# könnten wir auch einfach "100" schreiben, aber dann müssten wir den Wert jedes Mal
+	# manuell ändern, wenn wir mit einem anderen Satellitenbild mit anderer Auflösung arbeiten
+	# daher verwenden wir den Vektor "maparea", der die Anzahl der Pixel pro Klasse enthält,
+	# multiplizieren ihn mit der Fläche eines einzelnen Pixels (in Quadratmetern) und teilen
+	# das Ergebnis schließlich durch 1.000.000, um von Quadratmetern in Quadratkilometer zu skalieren
+	maparea <- maparea * res(svmPred_single)[1] *res(svmPred_single)[2] / 1000000
+	
+	# wir erhalten die gesamte Kartenfläche
+	A <- sum(maparea)
+	# nun berechnen wir die Flächenanteile für jede Klasse, also den prozentualen
+	# Anteil jeder Landbedeckungsklasse in der Karte
+	W_i <- maparea / A
+	# jetzt berechnen wir die Anzahl der Referenzpunkte pro Klasse
+	n_i <- rowSums(confmat) 
+	# nun können wir unsere auf Stichprobenpunkten basierende Konfusionsmatrix
+	# in eine auf Flächenanteilen basierende Konfusionsmatrix überführen
+	p <- W_i * confmat / n_i
+	p[is.na(p)] <- 0
+	
+	# durch Multiplikation mit der Gesamtfläche erhalten wir eine Konfusionsmatrix,
+	# die Flächen darstellt
+	p_a <- p*A
+	
+	# wir können uns diese anschauen und mit der ursprünglichen Konfusionsmatrix vergleichen
+	p_a
+	confmat
 
 ![Abbildung 12:D ](Fig_12.png)
+
+	###
+	### statistische Kennzahlen berechnen
+	####
+	
+	# Flächenschätzung
+	p_area <- colSums(p) * A
+	
+	# Gesamtgenauigkeit (Gl. 1)
+	OA <- sum(diag(p))
+	# Produzenten-Genauigkeit (Gl. 2)
+	PA <- diag(p) / colSums(p)
+	# Nutzer-Genauigkeit (Gl. 3)
+	UA <- diag(p) / rowSums(p)
+	
+	OA
+	PA
+	UA
+
+
 
  ##  Teil 5 - Binäre Versiegelungskarte
 
