@@ -409,7 +409,7 @@ Die Matrix entspricht nun sozusagen unserer Übersetzungstabelle. Links sehen wi
 
 Nun können wir mit dem **classify()**-Befehl diese "Übersetzungstabelle" auf unsere Rasterdatei anwenden: 
 
-	r_bin <- classify(r, rcl = cbind(lvl$value, lvl$sealed))
+	r_bin <- classify(svmPred_stack, rcl = cbind(lvl$value, lvl$sealed))
 
 Danach können nun das Ergebnis plotten (Abbildung 14):
 
