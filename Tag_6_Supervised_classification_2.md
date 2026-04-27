@@ -297,74 +297,69 @@ Dies führt nun zu zwei sehr ausführlichen Konfusionsmatrizen wo auch direkt ei
 
  ##  Teil 4 - Flächenkorrigierte Konfusionsmatrix
 
-Wie in der Vorlesung gehört, ist neben einer ...
+Wie in der Vorlesung gehört, ist neben einer unabhängigen Validierung, die Berücksichtigung der Flächenanteile, die die jeweiligen Landbedeckungsklassen in der finalen Karte einnehmen, ein weiterer Faktor, der im Idealfall bei der Validierung einer überwachten Klassifikation berücksichtigt werden sollte. Hintergrund ist, dass wenn bestimmte Klassen sehr große Flächen einnehmen, und andere sehr kleine, bereits eine prozentual sehr geringe Fehlklassifikation zu erheblichen Fehlern führen können. Was ist damit gemeint? Nehmen wir an, wir wollen eine invasive Baumart kartieren und der Einfachheit halber nehmen wir an, dass es in unserer Karte nur drei Klassen gibt: Baumart 1, Baumart 2 und die Invasive Baumart. Wir nehmen an, dass Baumart 1 90% der Fläche einnimmt, Baumart 2 8% und die invasive Art 2%. Insgesamt deckt unser Gebiet 100 km² ab. Wenn jetzt Baumart 1 zu 95% richtig klassifiziert wird (ein sehr guter Wert) aber 5% der Baumart fälschlicherweise in die Klasse "invasive Art" klassifiziert werden dann ergibt sich folgendes Problem: Die invasive Art deckt eigentlich nur 2% des Gesamtgebietes ab, d.h., 2 km². Wenn nun 5% der Klasse Baumart 1, die 9 km² abdeckt fälschlicherweise in die Klasse invasive Art klassifiziert wird, so werden in der Karte weitere 90 km² * 0,05 = 4.5 km² als invasive Art deklariert. d.h., anstatt den eigentlichen 2 km² zeigt unsere Karte eine Bedeckung von 6.5 km² mit der invasiven Art an. Das ist dreimal soviel wie der eigentliche Wert. Dies wäre von einer Managementperspektive ein großes Problem, und das obwohl die Klassifikationsgenauigkeit mit 95% von Baumart 1 eigentlich sehr hoch liegt. Diese Erläuterung ist eine vereinfachte Darstellung des Problems. Es spielen auch noch andere Aspekte wie z.B. die Verteilung und Anzahl der Referenzsamples eine Rolle. In der Vorlesung wurde dies ausführlicher diskutiert.
 
-	###########################################################################
-	## Flächen-adjustierte Konfusionsmatrix
-	###########################################################################
+Wie kann man dieses Problem nun in der Validierung abbilden? Hier bietet sich die Berechnung einer Flächen-adjustierten Konfusionsmatrix an, die wir im folgenden Schritt für Schritt durchgehen werden. Mehr Infos zu diesem Ansatz finden sich in dieser Publikation:
+
+https://samv.elearning.unipd.it/pluginfile.php/175898/mod_resource/content/0/articolo_oloffson.pdf
+
+
+Wir werden nun in R eine entsprechende Validierung durchführen. Der verwendete Kurs stammt vom online-Kurs RESEDA der Freien Universität Berlin und wurde leicht angepasst, damit der Code mit dem terra-Paket funktioniert:
+
+https://blogs.fu-berlin.de/reseda/area-adjusted-accuracies/
 	
-	## Code bereitgestellt von RESEDA @FU Berlin und leicht angepasst,
-	## um mit terra zu funktionieren:
-	## https://blogs.fu-berlin.de/reseda/area-adjusted-accuracies/
+Wir beginnen mit der Erstellung einer "normalen" Konfusionsmatrix
 	
-	# flächenadjustierte Genauigkeitsbewertung
-	# berechnet wie in Olofsson et al. 2014
-	
-	# erstelle reguläre Genauigkeitsmatrix
+	# erstelle reguläre Konfusionsmatrix
 	confmat <- table(as.factor(val$class), as.factor(val_ex_single$class))
-	# Anzahl der Pixel pro Klasse aus der Klassifikationskarte ermitteln und in km² umrechnen
-	
-	# der Befehl "values" extrahiert alle Pixelwerte aus der Klassifikationskarte
-	# diese sind einfach Werte von 1–7 (für die sieben Landnutzungsklassen)
+
+Dann berechnen wir die Anzahl der Pixel jeder Landbedeckungsklasse von unserer bereits erstellten Klassifikationskarten dafür sind einige Schritt notwendig. Der Befehl **values()** extrahiert alle Pixelwerte aus der Klassifikationskarte. Diese sind einfach Werte von 1–7 (für die sieben Landnutzungsklassen)
+
 	imgVal <- as.factor(values(svmPred_single))
-	# dieser Befehl bestimmt die Anzahl der in der Karte enthaltenen Landnutzungsklassen
-	# in unserem Fall 7
+
+Als nächsten Schritt bestimmmen wir die Anzahl an Landbedeckungsklassen in unserer Karte und speichern diese in die Variable **nclass**
 	nclass <- length(unique(val$class))
-	# "sapply" funktioniert ähnlich wie eine for-Schleife. Das bedeutet, eine Funktion
-	# (der Teil, der in einer for-Schleife in geschweiften Klammern stehen würde)
-	# wird wiederholt angewendet. In diesem Fall zählt die Funktion "sum(imgVal == x)",
-	# wie viele Pixel genau den Wert "x" haben. Dabei nimmt "x" Werte von 1 bis nclass an,
-	# mit nclass = 7 in unserem Fall. Die Variable "maparea" enthält am Ende die Anzahl
-	# der Pixel jeder Landbedeckungsklasse in unserer Klassifikationskarte
+	
+Als nächstes zählen wir für jede der Landbedeckungsklassen (in unserem Fall beschrieben durch die Werte 1-7) die Anzahl an pixels. Dafür verwenden wir den **sapply()**-Befehl. Dieser funktioniert ähnlich wie eine for-Schleife. Das bedeutet, eine Funktion (der Teil, der in einer for-Schleife in geschweiften Klammern stehen würde) wird wiederholt angewendet. In diesem Fall zählt die Funktion **sum(imgVal == x)**, wie viele Pixel genau den Wert "x" haben. Dabei nimmt "x" Werte von 1 bis nclass an, mit nclass = 7 in unserem Fall. Die Variable "maparea" enthält am Ende die Anzahl der Pixel jeder Landbedeckungsklasse in unserer Klassifikationskarte
+
 	maparea <- sapply(1:nclass, function(x) sum(imgVal == x))
-	# im nächsten Schritt berechnen wir die Fläche, die diesen Pixeln entspricht
-	# dazu multiplizieren wir zunächst die Anzahl der Pixel mit der Fläche eines Pixels
-	# in unserem Fall ist jedes Pixel 10 m x 10 m = 100 m²
-	# anstatt "res(svmPred_single)[1] * res(svmPred_single)[2]" zu schreiben, was
-	# die räumliche Auflösung eines Pixels aus den Metadaten des Rasterbildes bestimmt,
-	# könnten wir auch einfach "100" schreiben, aber dann müssten wir den Wert jedes Mal
-	# manuell ändern, wenn wir mit einem anderen Satellitenbild mit anderer Auflösung arbeiten
-	# daher verwenden wir den Vektor "maparea", der die Anzahl der Pixel pro Klasse enthält,
-	# multiplizieren ihn mit der Fläche eines einzelnen Pixels (in Quadratmetern) und teilen
-	# das Ergebnis schließlich durch 1.000.000, um von Quadratmetern in Quadratkilometer zu skalieren
+	
+im nächsten Schritt berechnen wir die Fläche, die diesen Pixeln entspricht dazu multiplizieren wir zunächst die Anzahl der Pixel mit der Fläche eines Pixels in unserem Fall ist jedes Pixel 10 m x 10 m = 100 m²; anstatt "res(svmPred_single)[1] * res(svmPred_single)[2]" zu schreiben, was die räumliche Auflösung eines Pixels aus den Metadaten des Rasterbildes bestimmt, könnten wir auch einfach "100" schreiben, aber dann müssten wir den Wert jedes Mal manuell ändern, wenn wir mit einem anderen Satellitenbild mit anderer Auflösung arbeiten. Daher verwenden wir den Vektor "maparea", der die Anzahl der Pixel pro Klasse enthält, multiplizieren ihn mit der Fläche eines einzelnen Pixels (in Quadratmetern) und teilen das Ergebnis schließlich durch 1.000.000, um von Quadratmetern in Quadratkilometer zu skalieren.
+
 	maparea <- maparea * res(svmPred_single)[1] *res(svmPred_single)[2] / 1000000
 	
-	# wir erhalten die gesamte Kartenfläche
+Maparea enthält nun also die Gesamtfläche aller Pixel der 7 Landbedeckungsklassen. Wir können nun die gesamte Kartenfläche berechnen indem wir die Flächen aller Pixel aufsummieren:
+
 	A <- sum(maparea)
-	# nun berechnen wir die Flächenanteile für jede Klasse, also den prozentualen
-	# Anteil jeder Landbedeckungsklasse in der Karte
+
+Nun können wir die Flächenanteile für jede Klasse, also den prozentualen  Anteil jeder Landbedeckungsklasse in der Karte berechnen:
+
 	W_i <- maparea / A
-	# jetzt berechnen wir die Anzahl der Referenzpunkte pro Klasse
+
+jetzt berechnen wir die Anzahl der Referenzpunkte pro Klasse die in die jeweilige Landbedeckungklasse klassifiziert wurden (also konkret die Summe aller Einträge in der Zeile der Konfusionsmatrix => gerne auch nochmal die Unterlagen aus der Vorlesung ansehen, um sicherzustellen, dass das gut verstanden ist).
+
 	n_i <- rowSums(confmat) 
-	# nun können wir unsere auf Stichprobenpunkten basierende Konfusionsmatrix
-	# in eine auf Flächenanteilen basierende Konfusionsmatrix überführen
+	
+nun können wir unsere auf Stichprobenpunkten basierende Konfusionsmatrix in eine auf Flächenanteilen basierende Konfusionsmatrix überführen. Dafür multiplizieren wir klassenspezifischen Flächen mit der Konfusionsmatrix und dividieren durch die Anzahl an Referenzpunkten. NA-Werte werden auf 0 gesetzt.
+
 	p <- W_i * confmat / n_i
 	p[is.na(p)] <- 0
 	
-	# durch Multiplikation mit der Gesamtfläche erhalten wir eine Konfusionsmatrix,
-	# die Flächen darstellt
+Durch die Multiplikation mit der Gesamtfläche erhalten wir eine Konfusionsmatrix, die Flächen entspricht
+
 	p_a <- p*A
 	
-	# wir können uns diese anschauen und mit der ursprünglichen Konfusionsmatrix vergleichen
+wir können uns diese nun anschauen und mit der ursprünglichen Konfusionsmatrix vergleichen
+
 	p_a
 	confmat
 
 ![Abbildung 12:D ](Fig_12.png)
 
-	###
-	### statistische Kennzahlen berechnen
-	####
-	
+Wie in Abbildung 12 dargestellt
+
+Abschließend können wir noch basierend auf der flächen-adjustierten Konfusionsmatrix die bereits bekannten statistische Kennzahlen berechnen und uns anzeigen lassen:
+
 	# Flächenschätzung
 	p_area <- colSums(p) * A
 	
