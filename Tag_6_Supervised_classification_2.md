@@ -356,7 +356,7 @@ wir können uns diese nun anschauen und mit der ursprünglichen Konfusionsmatrix
 
 ![Abbildung 12:D ](Fig_12.png)
 
-Wie in Abbildung 12 dargestellt entsprechen nun einzelne Einträge in der Konfusionsmatrix bestimmten Flächen in der finalen Karte. Dabei kann man erkennen, dass Fehlklassifikationen von einzelnen Pixeln nicht in dieselbe Flächen übersetzt werden, sondern diese angepasst werden, je nachdem wieviel Fläche die Klasse insgesamt im Bild einnimmt. So sehen wir z.B., dass ein Referenzpunt, der eigentlichen Gruenland ist falsch in die Klasse Acker klassifiziert wurde (markiert mit 1 in Abbildung 12), ebenso kam es zu einer Misklassifikation eines "Dach_grau" Pixels in die Klasse "Strasse" (markiert mit 2 in Abbildung 12). Da Acker insgesamt deutlich mehr Fläche einnimmt als Strassen, repräsentiert der einzelne falsch klassifizierte Grünland Pixel eine deutlich gößere Fläche (8.40 km²) als im Falle des falsch klassifzierten "Dach_grau"-Pixels (3,84 km²). Dasselbe Prinzip sehen wir auch für Acker-Pixel, die fälschlicherweise in die Klassen "Dach_grau" und "Dach_rot" klassifiziert wurden (markiert mit 3 in Abbildung 12). Je weniger groß die Klasse, in die ein Pixel falsch klassifiziert wurde, desto geringer die Fläche in der flächen-adjustierten Konfusionsmatrix. 
+Wie in Abbildung 12 dargestellt entsprechen nun einzelne Einträge in der Konfusionsmatrix bestimmten Flächen in der finalen Karte. Dabei kann man erkennen, dass Fehlklassifikationen von einzelnen Pixeln nicht in dieselbe Flächen übersetzt werden, sondern diese angepasst werden, je nachdem wieviel Fläche die Klasse insgesamt im Bild einnimmt. So sehen wir z.B., dass ein Referenzpunt, der eigentlichen Gruenland ist, falsch in die Klasse Acker klassifiziert wurde (markiert mit 1 in Abbildung 12), ebenso kam es zu einer Misklassifikation eines "Dach_grau" Pixels in die Klasse "Strasse" (markiert mit 2 in Abbildung 12). Da Acker insgesamt deutlich mehr Fläche einnimmt als Strassen, repräsentiert der einzelne falsch klassifizierte Grünland Pixel eine deutlich gößere Fläche (8.40 km²) als im Falle des falsch klassifzierten "Dach_grau"-Pixels (3,84 km²). Dasselbe Prinzip sehen wir auch für Acker-Pixel, die fälschlicherweise in die Klassen "Dach_grau" und "Dach_rot" klassifiziert wurden (markiert mit 3 in Abbildung 12). Je weniger groß die Klasse, in die ein Pixel falsch klassifiziert wurde, desto geringer die Fläche in der flächen-adjustierten Konfusionsmatrix. 
 
 Abschließend können wir noch basierend auf der flächen-adjustierten Konfusionsmatrix die bereits bekannten statistische Kennzahlen berechnen und uns anzeigen lassen:
 
@@ -373,7 +373,6 @@ Abschließend können wir noch basierend auf der flächen-adjustierten Konfusion
 	OA
 	PA
 	UA
-
 
 
  ##  Teil 5 - Binäre Versiegelungskarte
