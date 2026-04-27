@@ -427,4 +427,5 @@ Dieses Geotiff können wir nun in QGIS laden und mit den Google Satellitenbilder
 
 ## Hausaufgaben
 
-
+1. Versuchen Sie das Klassifikationsergebnis für ihr Untersuchungsgebiet (siehe Aufgabe letzte Woche) basierend auf den heute gelernten Informationen zu verbessern.
+2. Schauen Sie sich die erstellten Versiegelungskarten in QGIS an und vergleichen Sie sie mit den hochauflösenden Google Earth Satellitendaten. Wie würden Sie die Qualität beurteilen? An welchen Stellen funktioniert die Karte gut, an welchen Stellen zeigt sie Schwächen? Bitte verfassen Sie einen kleinen Text. Fügen Sie Abbildungen hinzu, um ihre Beschreibungen zusätzlich zu untermauern. 
